@@ -64,14 +64,16 @@ class CPU():
             self.notDefined(instruction)
         elif (instruction & 0xF000) == 0xF000:
             self.notDefined(instruction)
-        
 
+
+    # 0nnn
     def notDefined(self, instruction):
         print('Error.  Instruction has not been implemented.')
         print('Instruction: ', format(instruction, '04x'))
         sys.exit()
 
 
+    # 2nnn
     def call(self, instruction):
         '''
         2nnn - CALL addr
@@ -87,6 +89,7 @@ class CPU():
         self.pc = nnn
 
 
+    # 6xkk
     def load(self, instruction):
         '''
         6xkk - LD Vx, byte
