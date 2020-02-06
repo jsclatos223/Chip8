@@ -10,7 +10,19 @@ class MMU():
 
     # The functions below define what the Object can DO once created.
     def read(self, address):
-        return self.memroy[address]
+        return self.memory[address]
 
     def write(self, address, value):
         self.memory[address] = value
+
+    def loadROM(self, rom):
+        # Loading ROM into Memory
+        with open(rom, 'rb') as romDataFile:
+            rom_data = romDataFile.read()
+
+            count = 0x0200
+
+            # 2 main types of loops - for loop and while loop.
+            for byte in rom_data:                       # For each byte in the rom_data list, do something.
+                self.memory[count] = byte
+                count += 1                              # Increment the PC register by 1.
