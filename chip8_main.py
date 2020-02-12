@@ -23,12 +23,74 @@ def main(rom, debug):
     # Load ROM into memory
     memory_part.loadROM(rom)
 
-    # CPU Execution Loop
+    # CPU Main loop
+    # Run an infinite loop of calling the CPU tick() function, returning any results after each "tick",
+    # check for any outside events that happened during the "tick", and then draw ay graphics to the screen.
     while True:
-        cpu_part.tick()                 # 1 Hertz (Hz) of a cpu clock cycle
-        # INSERT EVENT CHECK CODE HERE
-        # INSERT DRAW GRAPHICS CODE HERE
-        # End CPU loop
+        if debug == '1':
+            while True:
+                # Debug mode initial output
+                step = input("\nPress the Enter Key to step to the next Instruction. Press 'q' to quit: ")
+                os.system('cls')
+
+                if step == 'q':
+                    sys.exit()              # Stops the program
+
+                elif step == '':
+                    # Outputs General Purpose Register Data during one individual "tick"
+                    cpu_part.tick()
+                    print("****************************** CPU Debug Data ******************************")
+                    print("General Purpose Register Data")
+                    print("V00:", format(cpu_part.V[0], '02x'),"\t", end = "", flush = True)    # flush --> clears the register
+                    print("V08:", format(cpu_part.V[8], '02x'))
+                    print("V01:", format(cpu_part.V[1], '02x'),"\t", end = "", flush = True)
+                    print("V09:", format(cpu_part.V[9], '02x'))
+                    print("V02:", format(cpu_part.V[2], '02x'),"\t", end = "", flush = True)
+                    print("V10:", format(cpu_part.V[10], '02x'))
+                    print("V03:", format(cpu_part.V[3], '02x'),"\t", end = "", flush = True)
+                    print("V11:", format(cpu_part.V[11], '02x'))
+                    print("V04:", format(cpu_part.V[4], '02x'),"\t", end = "", flush = True)
+                    print("V12:", format(cpu_part.V[12], '02x'))
+                    print("V05:", format(cpu_part.V[5], '02x'),"\t", end = "", flush = True)
+                    print("V13:", format(cpu_part.V[13], '02x'))
+                    print("V06:", format(cpu_part.V[6], '02x'),"\t", end = "", flush = True)
+                    print("V14:", format(cpu_part.V[14], '02x'))
+                    print("V07:", format(cpu_part.V[7], '02x'),"\t", end = "", flush = True)
+                    print("V15:", format(cpu_part.V[15], '02x'))
+
+                    # Prints Special Purpose Register Data during one individual "tick"
+                    print("\nSpecial Purpose Register Data")
+
+                    # Prints the Program Counter during one individual "tick"
+                    print("Program Counter:", format(cpu_part.pc, '04x'))
+
+                    # Prints the Stack Pointer during one individual "tick"
+                    print("Stack Pointer:", format(cpu_part.sp, '04x'))
+
+                    # Prints the CPU Stack during one individual "tick"
+                    print("CPU Stack:")
+                    for i, j in enumerate(cpu_part.stack):      # Remember you can name i, j anything (Cain used k, v).
+                        print(i, '\t', format(j, '04x'))
+
+                    # Prints the Current Instruction during one individual "tick"
+                    print("\nCurrent Instruction:", format(cpu_part.instruction, '04x'))
+
+                    # Prints data stored in the System Memory during one individual "tick"
+                    print("\nSystem Memory: ")
+                    # Outputs the Memory Address
+                    for i in range(0, 10, 2):                   # Remember you can name i, j anything (Cain used k, v).
+                        print("\n", format(cpu_part.pc + i, '04x') + ":", "\t", end = "", flush = True)
+                        # Outputs the data stored in Memory Address and Memory Address + 1
+                        for j in range(0, 2):
+                            if j < 2:
+                                print(format(memory_part.read((cpu_part.pc + i) + j), '02x'), "\t", end = "", flush = True)
+        else:
+            cpu_part.tick()                                     # 1 Hertz (Hz) of a cpu clock cycle
+            # INSERT EVENT CHECK CODE HERE
+            # INSERT DRAW GRAPHICS CODE HERE
+            # End CPU loop
+
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 3:              # Check to see if 3 arguments were entered on the command line.
