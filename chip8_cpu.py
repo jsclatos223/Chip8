@@ -67,6 +67,8 @@ class CPU():
             self.notDefined()
 
 
+    # OpCode Functions
+
     # 0nnn
     def notDefined(self):
         print('Error.  instruction has not been implemented.')

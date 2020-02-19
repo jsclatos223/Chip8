@@ -26,3 +26,6 @@ class MMU():
             for byte in rom_data:                       # For each byte in the rom_data list, do something.
                 self.memory[count] = byte
                 count += 1                              # Increment the PC register by 1.
+
+        for k, v in enumerate(self.memory):
+            print(format(k,'03x'), '\t', format(v, '02x'))
