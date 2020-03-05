@@ -22,6 +22,7 @@ class CPU():
 
         # Component Connections
         self.system_memory = 0
+        self.gpu_memory = 0
 
 
     # Functions

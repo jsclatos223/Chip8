@@ -7,7 +7,7 @@ import chip8_gpu        # Imports the GPU Object class file.
 import chip8_events     # Imports the Events Object class file.
 
 
-os.system('cls')	# Sends the clear command to the command line.
+os.system('cls')	# Sends the "cls" command to the command line.  On a Mac, "clear" sends the clear command.
 
 
 def main(rom, debug):
@@ -18,10 +18,15 @@ def main(rom, debug):
     events_part = chip8_events.EVENTS()     # Creates an Events Object from chip8_events.py class file.
 
     # Connect Chip8 Components
-    cpu_part.system_memory = memory_part    # Conenct the CPU to the system memory.
+    cpu_part.system_memory = memory_part    # Connect the CPU to the system memory.
+    cpu_part.gpu_memory = memory_part       # Connect the CPU to the GPU.
 
     # Load ROM into memory
     memory_part.loadROM(rom)
+
+    #Turn on the screen
+    if debug == '0':
+        gpu_part.screen()
 
     # CPU Main loop
     # Run an infinite loop of calling the CPU tick() function, returning any results after each "tick",
