@@ -17,6 +17,9 @@ class GPU():
         # Initialize GPU memory
         self.graphics_memory = [0x00] * self.pixels         # The main graphics memory for the GPU (2,048k).
 
+        # CPU Connection Variable
+        self.cpu = 0                                        # Connects to teh GPU to the CPU
+
 
     def screen(self):
         # Build Main Screen
@@ -24,3 +27,14 @@ class GPU():
 
         # Display an initial blank screen.
         self.screen.fill((0,0,0))                           # Sets all pixels to black and starts the screen.
+
+
+    def draw_graphics(self):
+        # Draw entire screen using data stored in GPU memory.
+        for scanline in range(self.height):     # For each scanline that makes up the screen (32 in total)
+            for pixel_in_scanline in range(self.width):     # Process each pixel in the current scanline
+                self.screen.fill(self.colors[self.graphics_memory[pixel_in_scanline + (scanline * self.width)]], Rect(pixel_in_scanline*10, scanline*10, 10, 10))
+                # Rect(left, top, width, height)
+
+        pygame.display.flip()                   # Update the screen with the new data.
+        self.cpu.draw_flag = False              # Disable the CPU draw flag.

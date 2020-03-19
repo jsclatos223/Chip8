@@ -24,6 +24,9 @@ class CPU():
         self.system_memory = 0
         self.gpu_memory = 0
 
+        # Draw Flag
+        self.draw_flag = False          # Draw to screen if instructed.
+
 
     # Functions
     def tick(self):
@@ -61,7 +64,7 @@ class CPU():
         elif (self.instruction & 0xF000) == 0xC000:
             self.notDefined()
         elif (self.instruction & 0xF000) == 0xD000:
-            self.notDefined()
+            self.DRW()
         elif (self.instruction & 0xF000) == 0xE000:
             self.notDefined()
         elif (self.instruction & 0xF000) == 0xF000:
@@ -119,3 +122,34 @@ class CPU():
         nnn = self.instruction & 0x0FFF
         self.I = nnn
         self.pc += 2
+
+
+    # dxyn
+    def DRW(self):
+        '''
+        Dxyn - DRW Vx, Vy, nibble
+        Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+
+        The interpreter reads n bytes from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen at coordinates (Vx, Vy). Sprites are XORed onto the existing screen. If this causes any pixels to be erased, VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen. See instruction 8xy3 for more information on XOR, and section 2.4, Display, for more information on the Chip-8 screen and sprites.
+        '''
+
+        vx = (self.instruction & 0x0F00) >> 8               # The CPU Register that is currently holding the x coordinates.
+        vy = (self.instruction & 0x00F0) >> 4               # The CPU Register that is currently holding the y coordinates.
+        xcord = self.V[vx]                                  # Extract the x value from the CPU instruction.
+        ycord = self.V[vy]                                  # Extract the y value from the CPU instruction.
+        height = self.instruction & 0x000F                  # The number of bytes that make up the sprite.
+        pixel = 0
+        self.V[0xF] = 0
+
+        for scanline in range(height):
+            pixel = self.system_memory.memory[self.I + scanline]        # Register I holds the memory locatiohn of where the sprites exists in memory.
+            for column in range(8):                                     # Check all 8 pixels that make up a single scanline of a sprite.
+                gpuMemX = xcord + column                                # Get the number of bytes horizontally in the GPU memory.
+                gpuMemY = (scanline + ycord) * 64                       # Get the number of bytes vertically in the GPU memory.
+                gpuByte = gpuMemX + gpu_memory                          # GPU Byte to draw to.
+                if pixel & (128 >> column) != 0 and not (scanline + ycord >= 32 or column + xcord >= 64):   # Make sure drawing is completely within boundaries.
+                    if self.gpu_memory.graphics_memory[gpuByte] == 1:
+                        self.V[0xf] = 1
+                    self.gpu_memory.graphics_memory[gpuByte] ^= 1       # XOR the byte to update the pixel.
+        self.draw_flag = True
+        # self.pc += 2                                                    # Enable the draw flag to instruct the sysytem to draw the above data to screen.

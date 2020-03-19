@@ -19,13 +19,14 @@ def main(rom, debug):
 
     # Connect Chip8 Components
     cpu_part.system_memory = memory_part    # Connect the CPU to the system memory.
-    cpu_part.gpu_memory = memory_part       # Connect the CPU to the GPU.
+    cpu_part.gpu_memory = gpu_part          # Connect the CPU to the GPU.
+    gpu_part.cpu = cpu_part                 # Connect the GPU to the CPU.
 
     # Load ROM into memory
     memory_part.loadROM(rom)
 
     #Turn on the screen
-    if debug == '0':
+    if debug == '0':# QUESTION:
         gpu_part.screen()
 
     # CPU Main loop
@@ -92,7 +93,11 @@ def main(rom, debug):
         else:
             cpu_part.tick()                                     # 1 Hertz (Hz) of a cpu clock cycle
             # INSERT EVENT CHECK CODE HERE
+
             # INSERT DRAW GRAPHICS CODE HERE
+            if cpu_part.draw_flag == True:
+                gpu_part.draw_graphics()
+
             # End CPU loop
 
 
