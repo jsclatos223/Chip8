@@ -130,6 +130,13 @@ class CPU():
 
     # 0nnn
     def notDefined(self):
+        '''
+        0nnn - SYS addr
+        Jump to a machine code routine at nnn.
+
+        This instruction is only used on the old computers on which Chip-8 was originally implemented. It is ignored by modern interpreters.
+        '''
+
         print('Error.  instruction has not been implemented.')
         print('instruction: ', format(self.instruction, '04x'))
         sys.exit()
@@ -325,7 +332,7 @@ class CPU():
 
         x = (self.instruction & 0x0F00) >> 8
         y = (self.instruction & 0x00F0) >> 4
-        self.V[x] == self.V[y]
+        self.V[x] = self.V[y]
         self.pc += 2
 
 
@@ -341,7 +348,7 @@ class CPU():
 
         x = (self.instruction & 0x0F00) >> 8
         y = (self.instruction & 0x00F0) >> 4
-        self.V[x] | self.V[y]
+        self.V[x] = self.V[x] | self.V[y]
         self.pc += 2
 
 
@@ -357,7 +364,7 @@ class CPU():
 
         x = (self.instruction & 0x0F00) >> 8
         y = (self.instruction & 0x00F0) >> 4
-        self.V[x] & self.V[y]
+        self.V[x] = self.V[x] & self.V[y]
         self.pc += 2
 
 
@@ -373,7 +380,7 @@ class CPU():
 
         x = (self.instruction & 0x0F00) >> 8
         y = (self.instruction & 0x00F0) >> 4
-        self.V[x] ^ self.V[y]
+        self.V[x] = self.V[x] ^ self.V[y]
         self.pc += 2
 
 
@@ -484,7 +491,7 @@ class CPU():
         x = (self.instruction & 0x0F00) >> 8
         y = (self.instruction & 0x00F0) >> 4
 
-        if if self.V[x] != self.V[y]:
+        if self.V[x] != self.V[y]:
             self.pc += 2
 
 
@@ -632,6 +639,7 @@ class CPU():
         The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.
         '''
 
+        x = (self.instruction & 0x0F00) >> 8
         # How to do this?
 
 
