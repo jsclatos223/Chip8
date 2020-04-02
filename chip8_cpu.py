@@ -1,5 +1,7 @@
 # This is the class blueprint for our CPU Object.
 import sys      # Functions specific to Python.
+import random   # Imports the random package.
+import time     # Imports the time package.
 
 
 class CPU():
@@ -14,17 +16,22 @@ class CPU():
         self.V = [0] * 16      # Array of General Purpose Registers
 
         # Special Purpose Registers
-        self.pc = 0x0200                # Program Counter - Point to the current self.instruction
-                                        # to execute in memory.
+        self.pc = 0x0200                # Program Counter - Point to the current self.instruction to execute in memory.
         self.stack = []                 # CPU Stack
-        self.sp = 0                     # Stack Point
+        self.sp = -1                    # Stack Point - Initiates as -1 since the stack itself is empty.  ********** CHANGE 4/1/2020.
         self.I = 0                      # Index Register - Holds memory addresses
+        self.dt = 0                     # Delay Timer Register.  ********** CHANGE 4/1/2020.
+        self.st = 0                     # Sound Timer Register.  ********** CHANGE 4/1/2020.
+        self.keys = [0] * 16            # Flags for each of the 16 keyboard keys.  ********** CHANGE 4/1/2020.
+        self.t_last - time.time()       # Timing control.  ********** CHANGE 4/1/2020.
 
         # Component Connections
-        self.system_memory = 0
-        self.gpu_memory = 0
+        self.system_memory = 0          # Connection to system memory.
+        self.gpu_memory = 0             # Connection to GPU memory.
 
         # Draw Flag
+        self.instruction = 0x0000       # Track the current CPU instruction.
+        self.previous_instruction = 0   # Previously executed CPU instruction.
         self.draw_flag = False          # Draw to screen if instructed.
 
 
@@ -32,19 +39,17 @@ class CPU():
     def tick(self):
         # Fetch
         self.instruction = (self.system_memory.read(self.pc) << 8) | self.system_memory.read(self.pc + 1)
-        # print(format(self.instruction, '04x'))
+        self.previous_instruction = self.instruction
 
-        # Decode / Execute
-        # print(format(self.instruction, '04x'))
-
+        # Decode and Execute
         if (self.instruction & 0xF000) == 0x0000:
             if (self.instruction & 0x00FF) == 0x00E0:
                 self.CLS()
-            elif 0x00EE:
+            elif (self.instruction & 0x00FF) == 0x00EE::
                 self.RET()
 
         elif (self.instruction & 0xF000) == 0x1000:
-            self.JP()
+            self.JMP()
 
         elif (self.instruction & 0xF000) == 0x2000:
             self.CALL()
@@ -66,17 +71,17 @@ class CPU():
 
         elif (self.instruction & 0xF000) == 0x8000:
             if (self.instruction & 0x000F) == 0:
-                self.LD()
+                self.LDXY()
             elif (self.instruction & 0x000F) == 1:
-                self.OR()
+                self.ORXY()
             elif (self.instruction & 0x000F) == 2:
-                self.AND()
+                self.ANDXY()
             elif (self.instruction & 0x000F) == 3:
-                self.XOR()
+                self.XORXY()
             elif (self.instruction & 0x000F) == 4:
-                self.ADD_2()
+                self.ADDXY()
             elif (self.instruction & 0x000F) == 5:
-                self.SUB()
+                self.SUBXY()
             elif (self.instruction & 0x000F) == 6:
                 self.SHR()
             elif (self.instruction & 0x000F) == 7:
@@ -85,13 +90,13 @@ class CPU():
                 self.SHL()
 
         elif (self.instruction & 0xF000) == 0x9000:
-            self.SNE_2()
+            self.SNER()
 
         elif (self.instruction & 0xF000) == 0xA000:
             self.LOAD_I()
 
         elif (self.instruction & 0xF000) == 0xB000:
-            self.JP_2()
+            self.JMPA()
 
         elif (self.instruction & 0xF000) == 0xC000:
             self.RND()
@@ -100,33 +105,44 @@ class CPU():
             self.DRW()
 
         elif (self.instruction & 0xF000) == 0xE000:
-            if (self.instruction & 0x00FF) == 9E:
+            if (self.instruction & 0xF0FF) == 0xE09E:
                 self.SKP()
-            elif (self.instruction & 0x00FF) == A1:
+            elif (self.instruction & 0xF0FF) == 0xE0A1:
                 self.SKNP()
 
         elif (self.instruction & 0xF000) == 0xF000:
-            if (self.instruction & 0x00FF) == 07:
-                self.LD_DT()
-            elif (self.instruction & 0x00FF) == 0A:
-                self.LD_K()
-            elif (self.instruction & 0x00FF) == 15:
-                self.LD_DT_2()
-            elif (self.instruction & 0x00FF) == 18:
-                self.LD_ST()
-            elif (self.instruction & 0x00FF) == 1E:
-                self.ADD_I()
-            elif (self.instruction & 0x00FF) == 29:
-                self.LD_F()
-            elif (self.instruction & 0x00FF) == 33:
-                self.LD_B()
-            elif (self.instruction & 0x00FF) == 55:
-                self.LD_I()
-            elif (self.instruction & 0x00FF) == 65:
-                self.LD_I_2()
+            if (self.instruction & 0xF0FF) == 0xF007:
+                self.DTVX()
+            elif (self.instruction & 0xF0FF) == 0xF00A:
+                self.notDefined()
+            elif (self.instruction & 0xF0FF) == 0xF015:
+                self.SETDLY()
+            elif (self.instruction & 0xF0FF) == 0xF018:
+                self.SETST()
+            elif (self.instruction & 0xF0FF) == 0xF01E:
+                self.ADDIX()
+            elif (self.instruction & 0xF0FF) == 0xF029:
+                self.LDFONT()
+            elif (self.instruction & 0xF0FF) == 0xF033:
+                self.BCD()
+            elif (self.instruction & 0xF0FF) == 0xF055:
+                self.LDIX()
+            elif (self.instruction & 0xF0FF) == 0xF065:
+                self.READREG()
 
+    # Timing Code
+    pytime = time.time()
+    if pytime - self.t_last >= 1.0/60:
+        if self.dt > 0:
+            self.dt -= 1
 
-    # OpCode Functions
+        if self.st > 0:
+            self.st -= 1
+
+        self.t_last = pytime
+
+    # Insert Event Check Code Here
+
 
     # 0nnn
     def notDefined(self):
@@ -198,26 +214,27 @@ class CPU():
         and section 2.4, Display, for more information on the Chip-8 screen and sprites.
         '''
 
-        vx = (self.instruction & 0x0F00) >> 8               # The CPU Register that is currently holding the x coordinates.
-        vy = (self.instruction & 0x00F0) >> 4               # The CPU Register that is currently holding the y coordinates.
-        xcord = self.V[vx]                                  # Extract the x value from the CPU instruction.
-        ycord = self.V[vy]                                  # Extract the y value from the CPU instruction.
-        height = self.instruction & 0x000F                  # The number of bytes that make up the sprite.
-        pixel = 0
-        self.V[0xF] = 0
+        vx = (self.instruction & 0x0F00) >> 8						# The CPU Register that is currently holding the x coordinates.
+		vy = (self.instruction & 0x00F0) >> 4						# The CPU Register that is currently holding the y coordinates.
+		xcord = self.V[vx] 											# Extract the x value from the CPU instruction.
+		ycord = self.V[vy]											# Extract the y value from the CPU instruction.
+		height = self.instruction & 0x000F							# The number of bytes that make up the sprite.
+		pixel = 0
+		self.V[0xF] = 0
 
         for scanline in range(height):
-            pixel = self.system_memory.memory[self.I + scanline]        # Register I holds the memory locatiohn of where the sprites exists in memory.
-            for column in range(8):                                     # Check all 8 pixels that make up a single scanline of a sprite.
-                gpuMemX = xcord + column                                # Get the number of bytes horizontally in the GPU memory.
-                gpuMemY = (scanline + ycord) * 64                       # Get the number of bytes vertically in the GPU memory.
-                gpuByte = gpuMemX + gpu_memory                          # GPU Byte to draw to.
-                if pixel & (128 >> column) != 0 and not (scanline + ycord >= 32 or column + xcord >= 64):   # Make sure drawing is completely within boundaries.
-                    if self.gpu_memory.graphics_memory[gpuByte] == 1:
-                        self.V[0xF] = 1
-                    self.gpu_memory.graphics_memory[gpuByte] ^= 1       # XOR the byte to update the pixel.
-        self.draw_flag = True                                           # Enable the draw flag to instruct the sysytem to draw the above data to screen.
-        self.pc += 2
+			pixel = self.system_memory.memory[self.I + scanline]	# Register I holds the memory location of where the sprites exists in memory.
+			for column in range(8):									# Check all 8 pixels that make up a single scanline of a sprite.
+				gpuMemX = xcord + column							# Get the number of bytes horizontally in GPU memory.
+				gpuMemY = (scanline + ycord) * 64					# Get the number of bytes vertically in GPU memory.
+				gpuByte = gpuMemX + gpuMemY							# GPU Byte to draw to.
+				if pixel & (128 >> column) != 0 and not (scanline + ycord >= 32 or column + xcord >= 64):	# Make sure drawing is completely within boundries.
+					if self.gpu_memory.graphics_memory[gpuByte] == 1:
+						self.V[0xf] = 1
+					self.gpu_memory.graphics_memory[gpuByte] ^= 1	# XOR the byte to update the pixel.
+
+		self.draw_flag = True										# Enable the draw flag to instruct the system to draw the above data to screen.
+		self.pc += 2
 
 
     # 00E0
@@ -246,7 +263,7 @@ class CPU():
 
 
     # 1nnn
-    def JP(self):
+    def JMP(self):
         '''
         1nnn - JP addr
         Jump to location nnn.
@@ -304,6 +321,7 @@ class CPU():
 
         if self.V[x] == self.V[y]:
             self.pc += 2
+        self.pc += 2
 
 
     # 7xkk
@@ -322,7 +340,7 @@ class CPU():
 
 
     # 8xy0
-    def LD(self):
+    def LDXY(self):
         '''
         8xy0 - LD Vx, Vy
         Set Vx = Vy.
@@ -337,7 +355,7 @@ class CPU():
 
 
     # 8xy1
-    def OR(self):
+    def ORXY(self):
         '''
         8xy1 - OR Vx, Vy
         Set Vx = Vx OR Vy.
@@ -353,7 +371,7 @@ class CPU():
 
 
     # 8xy2
-    def AND(self):
+    def ANDXY(self):
         '''
         8xy2 - AND Vx, Vy
         Set Vx = Vx AND Vy.
@@ -369,7 +387,7 @@ class CPU():
 
 
     # 8xy3
-    def XOR(self):
+    def XORXY(self):
         '''
         8xy3 - XOR Vx, Vy
         Set Vx = Vx XOR Vy.
@@ -385,7 +403,7 @@ class CPU():
 
 
     # 8xy4
-    def ADD_2(self):
+    def ADDXY(self):
         '''
         8xy4 - ADD Vx, Vy
         Set Vx = Vx + Vy, set VF = carry.
@@ -397,16 +415,16 @@ class CPU():
         y = (self.instruction & 0x00F0) >> 4
 
         if self.V[x] + self.V[y] > 255:
-            self.V[F] = 1
+            self.V[0xF] = 1
         else:
-            self.V[F] = 0
+            self.V[0xF] = 0
 
-        self.V[x] = self.V[x] + self.V[y]
+        self.V[x] = (self.V[x] + self.V[y]) & 0x00FF
         self.pc += 2
 
 
     # 8xy5
-    def SUB(self):
+    def SUBXY(self):
         '''
         8xy5 - SUB Vx, Vy
         Set Vx = Vx - Vy, set VF = NOT borrow.
@@ -418,9 +436,9 @@ class CPU():
         y = (self.instruction & 0x00F0) >> 4
 
         if self.V[x] > self.V[y]:
-            self.V[F] = 1
+            self.V[0xF] = 1
         else:
-            self.V[F] = 0
+            self.V[0xF] = 0
 
         self.V[x] = self.V[x] - self.V[y]
         self.pc += 2
@@ -437,8 +455,13 @@ class CPU():
 
         x = (self.instruction & 0x0F00) >> 8
         y = (self.instruction & 0x00F0) >> 4
-        # How to do this?
-        self.V[x] / 2
+
+        if (self.V[x] & 0x0F) == 1:                     # If this value is 1, then we are working with an odd number.
+            self.V[0xF] = 1
+        else:
+            self.V[0xF] = 0
+
+        self.V[x] >> 1                                  # Shifting right by 1, divides any number by 2.
         self.pc += 2
 
 
@@ -455,9 +478,9 @@ class CPU():
         y = (self.instruction & 0x00F0) >> 4
 
         if self.V[y] > self.V[x]:
-            self.V[F] = 1
+            self.V[0xF] = 1
         else:
-            self.V[F] = 0
+            self.V[0xF] = 0
 
         self.V[x] = self.V[y] - self.V[x]
         self.pc += 2
@@ -474,13 +497,18 @@ class CPU():
 
         x = (self.instruction & 0x0F00) >> 8
         y = (self.instruction & 0x00F0) >> 4
-        # How to do this?
-        self.V[x] * 2
+
+        if (self.V[x] & 0xF0) >> 4 == 1:                # If this value is 1, then we must carry this 1 to the carry register.
+            self.V[0xF] = 1
+        else:
+            self.V[0xF] = 0
+
+        self.V[x] << 1                                  # Shifting left by 1, multiplies any number by 2.
         self.pc += 2
 
 
     # 9xy0
-    def SNE_2(self):
+    def SNER(self):
         '''
         9xy0 - SNE Vx, Vy
         Skip next instruction if Vx != Vy.
@@ -493,10 +521,11 @@ class CPU():
 
         if self.V[x] != self.V[y]:
             self.pc += 2
+        self.pc += 2
 
 
     # Bnnn
-    def JP_2(self):
+    def JMPA(self):
         '''
         Bnnn - JP V0, addr
         Jump to location nnn + V0.
@@ -505,7 +534,7 @@ class CPU():
         '''
 
         nnn = self.instruction & 0x0FFF
-        self.pc = nnn + self.V[0]
+        self.pc = self.V[0] + nnn
 
 
     # Cxkk
@@ -519,7 +548,9 @@ class CPU():
 
         kk = self.instruction & 0x00FF
         x = (self.instruction & 0x0F00) >> 8
-        # self.V[x] = kk & ##           How to generate a random byte from 0 - 255?
+        rand = random.radiant(0, 255)                             # Generates a random number between 0 and 255.
+
+        self.V[x] = rand & kk
         self.pc += 2
 
 
@@ -532,7 +563,10 @@ class CPU():
         Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2.
         '''
 
-        # How to do this?
+        x = (self.instruction & 0x0F00) >> 8
+
+        if self.keys[self.V[x]] == 1:
+            self.pc += 2
         self.pc += 2
 
 
@@ -545,12 +579,15 @@ class CPU():
         Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2.
         '''
 
-        # How to do this?
+        x = (self.instruction & 0x0F00) >> 8
+
+        if self.keys[self.V[x]] == 0:
+            self.pc += 2
         self.pc += 2
 
 
     # Fx07
-    def LD_DT(self):
+    def DTVX(self):
         '''
         Fx07 - LD Vx, DT
         Set Vx = delay timer value.
@@ -559,25 +596,12 @@ class CPU():
         '''
 
         x = (self.instruction & 0x0F00) >> 8
-        # V[x] = Delay Timer Value?
-        self.pc += 2
-
-
-    # Fx0A
-    def LD_K(self):
-        '''
-        Fx0A - LD Vx, K
-        Wait for a key press, store the value of the key in Vx.
-
-        All execution stops until a key is pressed, then the value of that key is stored in Vx.
-        '''
-
-        # How to do this?
+        self.V[x] = self.dt
         self.pc += 2
 
 
     # Fx15
-    def LD_DT_2(self):
+    def SETDLY(self):
         '''
         Fx15 - LD DT, Vx
         Set delay timer = Vx.
@@ -585,12 +609,13 @@ class CPU():
         DT is set equal to the value of Vx.
         '''
 
-        # How to do this?
+        x = (self.instruction & 0x0F00) >> 8
+        self.dt -= self.V[x]
         self.pc += 2
 
 
     # Fx18
-    def LD_ST(self):
+    def SETST(self):
         '''
         Fx18 - LD ST, Vx
         Set sound timer = Vx.
@@ -598,12 +623,13 @@ class CPU():
         ST is set equal to the value of Vx.
         '''
 
-        # How to do this?
+        x = (self.instruction & 0x0F00) >> 8
+        self.st -= self.V[x]
         self.pc += 2
 
 
     # Fx1E
-    def ADD_I(self):
+    def ADDIX(self):
         '''
         Fx1E - ADD I, Vx
         Set I = I + Vx.
@@ -612,12 +638,12 @@ class CPU():
         '''
 
         x = (self.instruction & 0x0F00) >> 8
-        self.I += self.V[x]
+        self.I = self.I + self.V[x]
         self.pc += 2
 
 
     # Fx29
-    def LD_F(self):
+    def LDFONT(self):
         '''
         Fx29 - LD F, Vx
         Set I = location of sprite for digit Vx.
@@ -626,12 +652,12 @@ class CPU():
         '''
 
         x = (self.instruction & 0x0F00) >> 8
-        # self.I = ?
+        self.I = self.V[x] * 5
         self.pc += 2
 
 
     # Fx33
-    def LD_B(self):
+    def BCD(self):
         '''
         Fx33 - LD B, Vx
         Store BCD representation of Vx in memory locations I, I+1, and I+2.
@@ -640,11 +666,14 @@ class CPU():
         '''
 
         x = (self.instruction & 0x0F00) >> 8
-        # How to do this?
+        self.system_memory.memory[self.I] = self.V[x] // 100
+        self.system_memory.memory[self.I + 1] = (self.V[x] // 10) % 10
+        self.system_memory.memory[self.I + 2] = (self.V[x] % 100) % 10
+        self.pc += 2
 
 
     # Fx55
-    def LD_I(self):
+    def LDIX(self):
         '''
         Fx55 - LD [I], Vx
         Store registers V0 through Vx in memory starting at location I.
@@ -652,11 +681,14 @@ class CPU():
         The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I.
         '''
 
-        # How to do this?
+        x = (self.instruction & 0x0F00) >> 8
+        for reg in range(x + 1):
+            self.system_memory.memory[self.I + reg] = self.V[reg]
+            self.pc += 2
 
 
     # Fx65
-    def LD_I_2(self):
+    def READREG(self):
         '''
         Fx65 - LD Vx, [I]
         Read registers V0 through Vx from memory starting at location I.
@@ -664,4 +696,8 @@ class CPU():
         The interpreter reads values from memory starting at location I into registers V0 through Vx.
         '''
 
-        # How to do this?
+        x = (self.instruction & 0x0F00) >> 8
+        for reg in range(x + 1):
+            self.V[reg] = self.system_memory.memory[self.I + reg]
+
+        self.pc += 2
