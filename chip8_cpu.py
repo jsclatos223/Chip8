@@ -222,7 +222,7 @@ class CPU():
 		pixel = 0
 		self.V[0xF] = 0
 
-        for scanline in range(height):
+		for scanline in range(height):
 			pixel = self.system_memory.memory[self.I + scanline]	# Register I holds the memory location of where the sprites exists in memory.
 			for column in range(8):									# Check all 8 pixels that make up a single scanline of a sprite.
 				gpuMemX = xcord + column							# Get the number of bytes horizontally in GPU memory.
