@@ -28,6 +28,7 @@ class CPU():
         # Component Connections
         self.system_memory = 0          # Connection to system memory.
         self.gpu_memory = 0             # Connection to GPU memory.
+        self.events = 0                 # Connectoin to the Event Handler.
 
         # Draw Flag
         self.instruction = 0x0000       # Track the current CPU instruction.

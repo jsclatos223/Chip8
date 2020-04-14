@@ -22,7 +22,9 @@ def main(rom, debug):
     # Connect Chip8 Components
     cpu_part.system_memory = memory_part    # Connect the CPU to the system memory.
     cpu_part.gpu_memory = gpu_part          # Connect the CPU to the GPU.
+    cpu_part.events = events_part           # Connect the CPU to the Event Handler.
     gpu_part.cpu = cpu_part                 # Connect the GPU to the CPU.
+    events_part.cpu = cpu_part              # Connect the Event Handler to the CPU.
 
     # Load ROM into memory
     memory_part.loadROM(rom)
@@ -102,7 +104,8 @@ def main(rom, debug):
 
         else:
             while True:
-                cpu_part.tick()                                     # 1 Hertz (Hz) of a cpu clock cycle
+                pygame.time.wait(1)
+                cpu_part.tick()             # 1 Hertz (Hz) of a cpu clock cycle
 
             # Draw Graphics Code
                 if cpu_part.draw_flag == True:
